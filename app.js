@@ -1,4 +1,6 @@
 const express = require('express');
+const noteRouter = require('./api/router/noteRouter')
+const userRouter = require('./api/router/userRouter')
 const {} = require("./api/middleware/errorHandler")
 const https = require('https');
 const fs = require('fs');
@@ -11,9 +13,8 @@ const app = express();
 app.use(express.json())
 app.use(error.jsonParseErrorHandler);
 
-app.get("/",(req, res) => {
-    res.send("Hello World");
-})
+app.use("/notes", noteRouter)
+app.use("/users", userRouter)
 
 // Crear servidor HTTPS
 const httpsServer = https.createServer({
