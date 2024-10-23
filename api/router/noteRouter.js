@@ -21,7 +21,7 @@ router.get("/", versionMiddeleware("1.0.0"), (req, res) => {
 
 
 router.post("/:id/history", versionMiddeleware("1.0.0"), (req, res) => {
-    historyController.save
+    historyController.updateNoteById
 });
 
 router.post("/", versionMiddeleware("1.0.0"), (req, res) => {

@@ -25,7 +25,13 @@ exports.findAllNotes = async ( req, res)=>{
  */
 exports.findNoteById = async ( req, res)=>{
     try{
-
+        const data = {
+            userId:"6718def84aa9a9e82f7b1f8b",
+            ...req.params
+        }
+        const note = new Note();
+        let result = await note.getOneNoteById(data);
+        if(!result.message)return res.status(404).json({status:404,message:"note not found"})
     } catch (error) {
         let err = JSON.parse(error.message);
         return res.status(err.status).json(err);
@@ -54,13 +60,22 @@ exports.findNoteById = async ( req, res)=>{
  * @returns 
  */
 exports.FindAllNoteByTitle= async ( req, res)=>{
-    try{
-
+    try {
+        const data = {
+            id_user: '6718def84aa9a9e82f7b1f8b',
+            ...req.query
+        }
+        const note = new Note();
+        let result = await note.searchNoteByTitleDescription(data);
+        console.log(result.data.length);
+    
+        if (result.data.length == 0) return res.status(404).json({status: 404, message: "Note not found"});
+        return res.status(result.status).json(result);
     } catch (error) {
         let err = JSON.parse(error.message);
         return res.status(err.status).json(err);
     }
-}
+}    
 
 /**
  * 
