@@ -190,6 +190,52 @@ class Note extends Connect {
   }
 }
 
+async updateHistoryNote(_id, body, id_user) {
+  try {
+      
+      const { status, message, data: db } = await this.getConnect();
+      const collection = db.collection('nota');
+      const result = await collection.updateOne(
+          {
+              _id: new ObjectId(_id),
+              usuario_id: new ObjectId(id_user)
+          },
+          { $push: { changes: body } }
+      );
+      return { status: 214, message: "note updated", data: result };
+  } catch (error) {
+      throw new Error(JSON.stringify({ status: 500, message: "Error getting all notes", data: error }));
+  }
+}
+
+async deleteNotesById(_id_user, id) {
+  try {
+      const { status, message, data: db } = await this.getConnect();
+      const collection = db.collection('nota');
+      const result = await collection.updateOne(
+          {
+              _id: new ObjectId(id),
+              usuario_id: new ObjectId(_id_user)
+          },
+          { $set: { status: "not visible" } }
+      );
+      return { status: 200, message: "Note deleted", data: result };
+  } catch (error) {
+      throw new Error(JSON.stringify({ status: 500, message: "Error deleted note", data: error }));
+  }
+}
+
+async save(usuario_id, body) {
+  try {
+      const { status, message, data: db } = await this.getConnect();
+      const collection = db.collection('nota');
+      const result = await collection.insertOne(body);
+      return { status: 201, message: "Note saved", data: result }
+  } catch (error) {
+      throw new Error(JSON.stringify({ status: 500, message: "Error getting all notes", data: error }));
+  }
+}
+
 }
 
 module.exports = Note;

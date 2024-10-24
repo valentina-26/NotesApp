@@ -31,10 +31,10 @@ router.post("/", versionMiddeleware("1.0.0"), (req, res) => {
 
 
 router.put("/:id", versionMiddeleware("1.0.0"), (req, res) => {
-    notesController.updateNoteById
+    notesController.updateNote
 });
 
-router.delete("/:id", versionMiddeleware("1.0.0"), (req, res) => {
+router.put("/:id", versionMiddeleware("1.0.0"), (req, res) => {
     notesController.deleteNoteById
 });
 
