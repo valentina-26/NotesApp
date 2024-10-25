@@ -124,7 +124,7 @@ class Note extends Connect {
       }
     }
 
-    async search(userId, q) {
+    async searchNoteByTitleDescription(userId, q) {
   try {
     const { status, message, data: db } = await this.getConnect();
     const collection = db.collection('nota');

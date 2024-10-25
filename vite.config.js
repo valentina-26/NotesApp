@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { join } from 'path';
@@ -8,10 +9,10 @@ const privateKey = fs.readFileSync('./private.key');
 const certificate = fs.readFileSync('./certificate.crt');
 
 export default defineConfig({
-  root: join(__dirname, 'client'), // Carpeta de frontend
+  root: join(__dirname, 'client'),
   plugins: [vue()],
   build: {
-    outDir: join(__dirname, 'client/dist'), // Carpeta de salida del build
+    outDir: join(__dirname, 'client/dist'),
     emptyOutDir: true
   },
   server: {
@@ -20,6 +21,6 @@ export default defineConfig({
       cert: certificate,
     },
     host: 'localhost',
-    port: 3000, // Puerto que deseas usar
+    port: 3000,
   }
 });

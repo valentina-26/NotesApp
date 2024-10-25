@@ -1,5 +1,4 @@
-import express from 'express'; // Para ES Modules
-const indexRouter = express.Router();
+const layout = require("express").Router();
 const { join } = require("path");
 
 // Servir el archivo index.html
@@ -9,4 +8,4 @@ layout.get("/", (req, res) => {
 
 });
 
-export default indexRouter;
+module.exports = layout;

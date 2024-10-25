@@ -44,14 +44,14 @@
           <div 
             v-for="(note, index) in isSearchActive ? filteredNotes : notes" 
             :key="index" 
-            class="rounded-lg p-4 relative overflow-hidden"
-            :class="noteColors[index % noteColors.length]"
-            @click="editNote(index)"
+            class="rounded-lg p-4 relative overflow-hidden transition-colors duration-300"
+            :class="[noteColors[index % noteColors.length], { 'bg-red-500': noteToDelete === index }]"
+            @click="toggleDeleteMode(index)"
           >
             <p>{{ note.title }}</p>
             <div 
               v-if="noteToDelete === index"
-              class="absolute inset-0 bg-red-500 flex items-center justify-center"
+              class="absolute inset-0 flex items-center justify-center bg-red-500 bg-opacity-80"
               @click.stop="deleteNote(index)"
             >
               <TrashIcon class="w-8 h-8" />
@@ -205,6 +205,14 @@ const finalizeSave = () => {
     notes.value.push({ ...currentNote.value })
   }
   isEditing.value = false
+}
+
+const toggleDeleteMode = (index) => {
+  if (noteToDelete.value === index) {
+    noteToDelete.value = null
+  } else {
+    noteToDelete.value = index
+  }
 }
 
 const deleteNote = (index) => {

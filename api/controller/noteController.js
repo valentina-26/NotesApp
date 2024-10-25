@@ -38,20 +38,7 @@ exports.findNoteById = async ( req, res)=>{
     }
 }
 
-/**
- * 
- * @method findNoteById
- * @description  obtiene una nota por medio del id
- * @returns 
- */
-exports.findNoteById = async ( req, res)=>{
-    try{
 
-    } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
-    }
-}
 
 /**
  * 
@@ -83,28 +70,8 @@ exports.FindAllNoteByTitle= async ( req, res)=>{
  * @description  obtener historial de cambios de una nota
  * TODO:solo admin
  */
-exports.historyOfChanges= async ( req, res)=>{
-    try{
 
-    } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
-    }
-}
 
-/**
- * 
- * @method save
- * @description  crear una nueva nota
- */
-exports.save= async ( req, res)=>{
-    try{
-
-    } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
-    }
-}
 
 /**
  * 
@@ -144,7 +111,7 @@ exports.deleteNoteById= async ( req, res)=>{
         };
         
         let note = new Note();
-        let resultGet = await note.getOneNotesById(data);
+        let resultGet = await note.getOneNoteById(data);
         if(!resultGet.data) return res.status(214).json({status: 214, message: "Note updated"});
         
         let resultDelete = await note.deleteNotesById(data);
@@ -168,7 +135,7 @@ exports.save = async(req, res)=>{
         const note = new Note();
         let resultPOST = await note.save(data);
         if(!resultPOST.data.acknowledged) return res.status(406).json({status: 406, message: "Note not saved"});
-        let resultGET = await note.getOneNotesByld({id_user, id:resultPOST.data.insertedId});
+        let resultGET = await note.getOneNoteById({id_user, id:resultPOST.data.insertedId});
         return res.status(201).json({status: 201, message: "Note created", data: resultGET.data});
     } catch (error) {
         let err = JSON.parse(error.message);
