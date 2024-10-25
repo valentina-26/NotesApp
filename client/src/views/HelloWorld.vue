@@ -135,18 +135,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { SearchIcon, ClockIcon, PlusIcon, TrashIcon, ChevronLeftIcon, EyeIcon, CameraIcon, BoldIcon, ItalicIcon, UnderlineIcon, ListIcon, ListOrderedIcon } from 'lucide-vue-next'
 
-const notes = ref([
-  { title: 'UI concepts worth existing', content: '' },
-  { title: 'Book Review : The Design of Everyday Things by Don Norman', content: '' },
-  { title: 'Animes produced by Ufotable', content: '' },
-  { title: 'Mangas planned to read', content: '' },
-  { title: 'Awesome tweets collection', content: '' },
-  { title: 'List of free & open source apps', content: '' }
-])
+const API_URL = 'https://localhost:5011'
 
+const notes = ref([])
 const noteColors = [
   'bg-pink-400',
   'bg-red-400',
@@ -163,6 +157,28 @@ const currentNote = ref({ title: '', content: '' })
 const currentNoteIndex = ref(null)
 const showSaveModal = ref(false)
 const noteToDelete = ref(null)
+const isLoading = ref(false)
+const error = ref(null)
+
+// Cargar notas al iniciar el componente
+onMounted(async () => {
+  await fetchNotes()
+})
+
+// Obtener todas las notas
+const fetchNotes = async () => {
+  try {
+    isLoading.value = true
+    const response = await fetch(`${API_URL}/notes`)
+    const data = await response.json()
+    notes.value = data
+  } catch (err) {
+    error.value = 'Error al cargar las notas'
+    console.error(err)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredNotes = computed(() => {
   if (!searchTerm.value) return notes.value
@@ -171,10 +187,24 @@ const filteredNotes = computed(() => {
   )
 })
 
-const toggleSearch = () => {
+// Buscar notas
+const toggleSearch = async () => {
   isSearchActive.value = !isSearchActive.value
   if (!isSearchActive.value) {
     searchTerm.value = ''
+    await fetchNotes() // Recargar todas las notas
+  } else if (searchTerm.value) {
+    try {
+      isLoading.value = true
+      const response = await fetch(`${API_URL}/notes/search?q=${searchTerm.value}`)
+      const data = await response.json()
+      notes.value = data
+    } catch (err) {
+      error.value = 'Error en la búsqueda'
+      console.error(err)
+    } finally {
+      isLoading.value = false
+    }
   }
 }
 
@@ -184,27 +214,94 @@ const createNewNote = () => {
   isEditing.value = true
 }
 
-const editNote = (index) => {
-  currentNote.value = { ...notes.value[index] }
-  currentNoteIndex.value = index
-  isEditing.value = true
-}
-
-const saveNote = () => {
-  if (hasChanges()) {
-    showSaveModal.value = true
-  } else {
-    finalizeSave()
+const editNote = async (index) => {
+  try {
+    isLoading.value = true
+    const noteId = notes.value[index].id
+    const response = await fetch(`${API_URL}/notes/${noteId}`)
+    const data = await response.json()
+    currentNote.value = { ...data }
+    currentNoteIndex.value = index
+    isEditing.value = true
+  } catch (err) {
+    error.value = 'Error al cargar la nota'
+    console.error(err)
+  } finally {
+    isLoading.value = false
   }
 }
 
-const finalizeSave = () => {
-  if (currentNoteIndex.value !== null) {
-    notes.value[currentNoteIndex.value] = { ...currentNote.value }
-  } else {
-    notes.value.push({ ...currentNote.value })
+const finalizeSave = async () => {
+  try {
+    isLoading.value = true
+    let response
+
+    if (currentNoteIndex.value !== null) {
+      // Actualizar nota existente
+      const noteId = notes.value[currentNoteIndex.value].id
+      response = await fetch(`${API_URL}/notes/${noteId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(currentNote.value)
+      })
+    } else {
+      // Crear nueva nota
+      response = await fetch(`${API_URL}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(currentNote.value)
+      })
+    }
+
+    const savedNote = await response.json()
+    
+    if (currentNoteIndex.value !== null) {
+      notes.value[currentNoteIndex.value] = savedNote
+    } else {
+      notes.value.push(savedNote)
+    }
+    
+    isEditing.value = false
+  } catch (err) {
+    error.value = 'Error al guardar la nota'
+    console.error(err)
+  } finally {
+    isLoading.value = false
   }
-  isEditing.value = false
+}
+
+const deleteNote = async (index) => {
+  try {
+    const noteId = notes.value[index].id
+    await fetch(`${API_URL}/notes/${noteId}`, {
+      method: 'DELETE'
+    })
+    notes.value.splice(index, 1)
+    noteToDelete.value = null
+  } catch (err) {
+    error.value = 'Error al eliminar la nota'
+    console.error(err)
+  }
+}
+
+// Guardar versión de la nota
+const saveNoteVersion = async (noteId) => {
+  try {
+    await fetch(`${API_URL}/notes/${noteId}/history`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(currentNote.value)
+    })
+  } catch (err) {
+    error.value = 'Error al guardar la versión'
+    console.error(err)
+  }
 }
 
 const toggleDeleteMode = (index) => {
@@ -213,11 +310,6 @@ const toggleDeleteMode = (index) => {
   } else {
     noteToDelete.value = index
   }
-}
-
-const deleteNote = (index) => {
-  notes.value.splice(index, 1)
-  noteToDelete.value = null
 }
 
 const goBack = () => {
