@@ -170,11 +170,11 @@ const fetchNotes = async () => {
   try {
     isLoading.value = true
     const response = await fetch(`${API_URL}/notes`)
-    const data = await response.json()
-    notes.value = data
+    const { data } = await response.json() // Desestructuramos para obtener data
+    notes.value = data // Asignamos el array de notas que está dentro de data
   } catch (err) {
     error.value = 'Error al cargar las notas'
-    console.error(err)
+    console.error('Error completo:', err)
   } finally {
     isLoading.value = false
   }

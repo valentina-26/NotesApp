@@ -1,3 +1,8 @@
+const User = require("../model/userModel");
+const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken")
+const fs = require('fs');
+
 /**
  * 
  * @method AddNewUser
@@ -5,12 +10,22 @@
  * TODO: devuelve un token con jwt
  */
 exports.AddNewUser = async ( req, res)=>{
-    try{
-
+    try {
+        let user = new User();
+        req.body.password = await bcrypt.hash(req.body.password, 10)
+        let resultPOST = await user.save(req.body);
+        if(resultPOST.status == 201) return res.status(resultPOST.status).json(resultPOST);
+        delete req.body.password;
+        req.body._id = data.insertedId;
+        const SECRET_KEY = fs.readFileSync('./certificate.cer');
+        const token = jwt.sign(req.body, SECRET_KEY.toString('utf8'), { expiresIn: 1800000 });
+        req.session.auth = token;
+        return res.status(202).json({status: 202, message: "User created and logged in"})
     } catch (error) {
         let err = JSON.parse(error.message);
         return res.status(err.status).json(err);
     }
+      
 }
 
 /**

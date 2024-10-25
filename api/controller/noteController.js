@@ -7,13 +7,13 @@ const Note = require("../model/noteModel");
  * @returns 
  */
 exports.findAllNotes = async ( req, res)=>{
-    try{
+    try {
         const note = new Note();
-        let result = await note.getAllNotes();
-        return res.status(result.status).json(result)
+        let result = await note.getAllNotes({userId : "6718def84aa9a9e82f7b1f8b"});
+        return res.status(result.status).json(result);
     } catch (error) {
         let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
+        return res.status(err.status).json(err)
     }
 }
 

@@ -8,7 +8,7 @@ module.exports = class Connect {
 
   async getConnect() {
     try {
-      const client = await MongoClient.connect(this.url, { useNewUrlParser: true, useUnifiedTopology: true });
+      const client = await MongoClient.connect(this.url); // Eliminado useNewUrlParser y useUnifiedTopology
       const db = client.db(this.dbName);
       return {
         status: 200,

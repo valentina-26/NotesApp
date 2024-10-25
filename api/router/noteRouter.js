@@ -1,45 +1,46 @@
-const router = require("express").Router({mergeParams: true});
+const router = require("express").Router({ mergeParams: true });
 const notesController = require('../controller/noteController');
 const historyController = require('../controller/historyController');
+const versionMiddeleware = require('../middleware/versionate');
 
-const versionMiddeleware = require('../middleware/versionate')
-//buscar notas
-router.get("/search",versionMiddeleware("1.0.0"),  (req, res) => {
-    notesController.FindAllNoteByTitle
+// Buscar notas
+router.get("/search", versionMiddeleware("1.0.0"), (req, res) => {
+    notesController.FindAllNoteByTitle(req, res);
 });
-//historial de notas
-/*router.get("/:id/history",versionMiddeleware("1.0.0"),  (req, res) => {
-    notesController.rgtrtter
-});*/
-//obtener nota especifica
+
+// Historial de notas
+// router.get("/:id/history", versionMiddeleware("1.0.0"), (req, res) => {
+//     historyController.rgtrtter(req, res);
+// });
+
+// Obtener nota específica
 router.get("/:id", versionMiddeleware("1.0.0"), (req, res) => {
-    notesController.findNoteById
+    notesController.findNoteById(req, res);
 });
-//obtener todas las notas
+
+// Obtener todas las notas
 router.get("/", versionMiddeleware("1.0.0"), (req, res) => {
-    notesController.findAllNotes
+    notesController.findAllNotes(req, res);
 });
 
-//nueva version nota
+// Nueva versión nota
 router.post("/:id/history", versionMiddeleware("1.0.0"), (req, res) => {
-    historyController.updateHistoryNote
+    historyController.updateHistoryNote(req, res);
 });
 
-//crear nota
+// Crear nota
 router.post("/", versionMiddeleware("1.0.0"), (req, res) => {
-    notesController.save
+    notesController.save(req, res);
 });
 
-
-//actualizar nota
+// Actualizar nota
 router.put("/:id", versionMiddeleware("1.0.0"), (req, res) => {
-    notesController.updateNote
+    notesController.updateNote(req, res);
 });
 
-//eliminar nota
+// Eliminar nota
 router.delete("/:id", versionMiddeleware("1.0.0"), (req, res) => {
-    notesController.deleteNoteById
+    notesController.deleteNoteById(req, res);
 });
 
-
-module.exports = router
+module.exports = router;

@@ -8,6 +8,7 @@ class Note extends Connect {
   
     async getAllNotes(userId) {
       try {
+        
         const { status, message, data: db } = await this.getConnect();
         const collection = db.collection('nota');
         const result = await collection.aggregate([
