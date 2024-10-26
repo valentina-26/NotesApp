@@ -310,37 +310,95 @@ async updateHistoryNote({ _id, body, userId }) {
   }
 }
 
-  async deleteNotesById(_id_user, id) {
-    try {
-      const { status, message, data: db } = await this.getConnect();
+async deleteNotesById({ id, userId }) {
+  try {
+      const { data: db } = await this.getConnect();
       const collection = db.collection('nota');
+
+      // Primero imprimir los datos que vamos a usar para debug
+      console.log('Attempting to delete note with:', {
+          _id: id,
+          userId: userId
+      });
+
       const result = await collection.updateOne(
-        {
-          _id: new ObjectId(id),
-          usuario_id: new ObjectId(_id_user)
-        },
-        { $set: { status: "not visible" } }
+          {
+              _id: new ObjectId(id),
+              userId: userId,  // No convertimos a ObjectId ya que mencionaste que es string
+              status: "visible"
+          },
+          {
+              $set: { 
+                  status: "not visible"
+              }
+          }
       );
-      return { status: 200, message: "Note deleted", data: result };
-    } catch (error) {
-      throw new Error(JSON.stringify({ status: 500, message: "Error deleting note", data: error.message }));
-    }
-  }
 
-  async save(usuario_id, body) {
-    try {
-      const { status, message, data: db } = await this.getConnect();
+      console.log('Update result:', result); // Para debug
+
+      if (result.matchedCount === 0) {
+          return {
+              status: 404,
+              message: "Note not found"
+          };
+      }
+
+      return { 
+          status: 200, 
+          message: "Note marked as not visible successfully",
+          data: {
+              modified: result.modifiedCount,
+              id: id
+          }
+      };
+
+  } catch (error) {
+      console.error('Error in deleteNotesById:', error);
+      throw new Error(JSON.stringify({ 
+          status: 500, 
+          message: "Error deleting note", 
+          data: error.message 
+      }));
+  }
+}
+
+
+async save(userId, body) {
+  try {
+      const { data: db } = await this.getConnect(); // Asegúrate de que esta función obtenga la conexión correctamente
       const collection = db.collection('nota');
 
-      // Asegúrate de incluir el usuario_id en el documento
-      const noteToInsert = { ...body, usuario_id: new ObjectId(usuario_id) };
+      // Asegúrate de que los tipos de datos sean correctos
+      if (typeof body.title !== 'string' || typeof body.description !== 'string') {
+          throw new Error("Invalid data types for title or description");
+      }
+
+      const noteToInsert = {
+          title: body.title,
+          description: body.description,
+          usuario_id: new ObjectId(userId), // Asegúrate de que userId sea un ObjectId válido
+          status: "visible",
+          changes: [] // Inicializa los cambios como un array vacío
+      };
+
       const result = await collection.insertOne(noteToInsert);
 
-      return { status: 201, message: "Note saved", data: result };
-    } catch (error) {
-      throw new Error(JSON.stringify({ status: 500, message: "Error saving note", data: error.message }));
-    }
+      return {
+          status: 201,
+          message: "Note saved successfully",
+          data: {
+              _id: result.insertedId,
+              ...noteToInsert
+          }
+      };
+  } catch (error) {
+      throw new Error(JSON.stringify({
+          status: 500,
+          message: "Error saving note",
+          data: error.message
+      }));
   }
+}
 }
 
 module.exports = Note;

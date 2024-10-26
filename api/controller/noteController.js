@@ -140,44 +140,64 @@ exports.updateNote = async (req, res) => {
  * @method deleteNoteById
  * @description  Eliminar una nota
  */
-exports.deleteNoteById= async ( req, res)=>{
+exports.deleteNoteById = async (req, res) => {
     try {
         const data = {
-            userId: '6718e1584aa9a9e82f7b1f9f',
+            userId: '6716c1b762f9cc85af494515',
             id: req.params.id
         };
-        
+
         let note = new Note();
-        let resultGet = await note.getOneNoteById(data);
-        if(!resultGet.data) return res.status(214).json({status: 214, message: "Note updated"});
         
+        // Verificar si la nota existe
+        let resultGet = await note.getOneNoteById(data);
+        
+        if(!resultGet.data) {
+            return res.status(404).json({
+                status: 404, 
+                message: "Note not found"
+            });
+        }
+
+        // Si existe, procedemos a marcarla como no visible
         let resultDelete = await note.deleteNotesById(data);
         return res.status(resultDelete.status).json(resultDelete);
+
     } catch (error) {
         let err = JSON.parse(error.message);
-        return res.status(err.status).json(err)
+        return res.status(err.status).json(err);
     }
-}
+};
 
-exports.save = async(req, res)=>{
+
+exports.save = async (req, res) => {
     try {
-        let userId = '6718e1584aa9a9e82f7b1f9f';
+        let userId = '6716c1b762f9cc85af494515'; 
         const data = {
             usuario_id: userId,
-            body: {...req.body}
+            body: { ...req.body }
         };
-        data.body.usuario_id = new ObjectId(userId);
-        data.body.changes = [];
-        data.body.status = "visible";
+
+        // Validar los campos
+        if (!data.body.title || typeof data.body.title !== 'string' || !data.body.description || typeof data.body.description !== 'string') {
+            return res.status(400).json({ status: 400, message: "Invalid title or description" });
+        }
+
+        // No necesitas volver a asignar usuario_id en el body, ya lo haces en el modelo
         const note = new Note();
-        let resultPOST = await note.save(data);
-        if(!resultPOST.data.acknowledged) return res.status(406).json({status: 406, message: "Note not saved"});
-        let resultGET = await note.getOneNoteById({userId, id:resultPOST.data.insertedId});
-        return res.status(201).json({status: 201, message: "Note created", data: resultGET.data});
+        let resultPOST = await note.save(data.usuario_id, data.body);
+
+        if (!resultPOST.data.acknowledged) {
+            return res.status(406).json({ status: 406, message: "Note not saved" });
+        }
+
+        let resultGET = await note.getOneNoteById({ userId, id: resultPOST.data.insertedId });
+        return res.status(201).json({ status: 201, message: "Note created", data: resultGET.data });
     } catch (error) {
         let err = JSON.parse(error.message);
-        return res.status(err.status).json(err)
+        return res.status(err.status).json(err);
     }
+};
 
-}
+
 
