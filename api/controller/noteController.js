@@ -92,25 +92,48 @@ exports.FindAllNoteByTitle = async (req, res) => {
  * @method updateNoteById
  * @description  actualizar nota existente
  */
-exports.updateNote= async ( req, res)=>{
+exports.updateNote = async (req, res) => {
     try {
         const data = {
-            userId: '6718e1584aa9a9e82f7b1f9f',
-            body: {...req.body},
+            userId: new ObjectId('6716c1b762f9cc85af494515'),
+            body: {
+                ...req.body,
+                date: new Date()
+            },
             id: req.params.id
         };
-        data.body.date = new Date()
+
         const note = new Note();
-        let resultGet = await note.getOneNoteById(data);
-        if(!resultGet.data) return res.status(404).json({status: 404, message: "Note not found"});
         
-        let resultPut = await note.updateHistoryNote(data);
+        console.log('Searching for note:', {
+            userId: data.userId,
+            noteId: data.id
+        });
+        const resultGet = await note.getOneNoteById({
+            userId: data.userId,
+            id: data.id
+        });
+
+        if(!resultGet.data) {
+            return res.status(404).json({
+                status: 404, 
+                message: "Note not found"
+            });
+        }
+
+        // Si la nota existe, procedemos a actualizarla
+        let resultPut = await note.updateHistoryNote({
+            _id: data.id,
+            body: data.body,
+            userId: data.userId
+        });
+
         return res.status(resultPut.status).json(resultPut);
     } catch (error) {
         let err = JSON.parse(error.message);
-        return res.status(err.status).json(err)
+        return res.status(err.status).json(err);
     }
-}
+};
 
 /**
  * 

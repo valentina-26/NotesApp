@@ -241,22 +241,74 @@ async searchNoteByTitleDescription({ userId, searchTerm }) {
   }
 }
 
-  async updateHistoryNote(_id, body, id_user) {
-    try {
-      const { status, message, data: db } = await this.getConnect();
+async updateHistoryNote({ _id, body, userId }) {
+  try {
+      const { data: db } = await this.getConnect();
       const collection = db.collection('nota');
-      const result = await collection.updateOne(
-        {
+
+      // Comprobar si la nota existe primero
+      console.log('Updating note:', {
+        _id,
+        userId,
+        body
+    });
+      const noteExists = await collection.findOne({
           _id: new ObjectId(_id),
-          usuario_id: new ObjectId(id_user)
-        },
-        { $push: { changes: body } }
+          userId: new ObjectId(userId),
+          status: "visible"
+      });
+
+      if (!noteExists) {
+          throw new Error(JSON.stringify({
+              status: 404,
+              message: "Note not found"
+          }));
+      }
+
+      // Si la nota existe, actualizar
+      const result = await collection.updateOne(
+          {
+              _id: new ObjectId(_id),
+              userId: new ObjectId(userId),
+              status: "visible"
+          },
+          {
+              $push: {
+                  changes: {
+                      title: body.title,
+                      description: body.description,
+                      date: body.date
+                  }
+              }
+          }
       );
-      return { status: 214, message: "Note updated", data: result };
-    } catch (error) {
-      throw new Error(JSON.stringify({ status: 500, message: "Error updating note", data: error.message }));
-    }
+
+      if (result.modifiedCount === 0) {
+          throw new Error(JSON.stringify({
+              status: 400,
+              message: "No changes were made to the note"
+          }));
+      }
+
+      return {
+          status: 200,
+          message: "Note updated successfully",
+          data: {
+              _id: _id,
+              ...body
+          }
+      };
+  } catch (error) {
+      if (error.message.includes("status")) {
+          throw error;
+      }
+      throw new Error(JSON.stringify({
+          status: 500,
+          message: "Error updating note",
+          data: error.message
+      }));
   }
+}
 
   async deleteNotesById(_id_user, id) {
     try {
