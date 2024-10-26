@@ -47,23 +47,36 @@ exports.findNoteById = async (req, res) => {
  * @description  Buscar nota por la descripcion o titulo
  * @returns 
  */
-exports.FindAllNoteByTitle= async ( req, res)=>{
+exports.FindAllNoteByTitle = async (req, res) => {
     try {
         const data = {
-            id_user:'6718def84aa9a9e82f7b1f8b',
-            ...req.query
+            userId: '6716c1b762f9cc85af494515',
+            searchTerm: req.query.q?.trim()
+        };
+
+        if (!data.searchTerm) {
+            return res.status(400).json({ 
+                status: 400, 
+                message: "Search term is required" 
+            });
         }
+
         const note = new Note();
-        let result = await note.searchNoteByTitleDescription(data);
-        console.log(result.data.length);
-    
-        if (result.data.length == 0) return res.status(404).json({status: 404, message: "Note not found"});
-        return res.status(result.status).json(result);
+        const result = await note.searchNoteByTitleDescription(data);
+        
+        if (!result.data || result.data.length === 0) {
+            return res.status(404).json({ 
+                status: 404, 
+                message: "No notes found matching the search criteria" 
+            });
+        }
+        
+        return res.status(200).json(result);
     } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
+        const err = typeof error.message === 'string' ? JSON.parse(error.message) : error;
+        return res.status(err.status || 500).json(err);
     }
-}    
+}
 
 /**
  * 
@@ -107,7 +120,7 @@ exports.updateNote= async ( req, res)=>{
 exports.deleteNoteById= async ( req, res)=>{
     try {
         const data = {
-            id_user: '6718e1584aa9a9e82f7b1f9f',
+            userId: '6718e1584aa9a9e82f7b1f9f',
             id: req.params.id
         };
         
@@ -125,18 +138,18 @@ exports.deleteNoteById= async ( req, res)=>{
 
 exports.save = async(req, res)=>{
     try {
-        let id_user = '6718e1584aa9a9e82f7b1f9f';
+        let userId = '6718e1584aa9a9e82f7b1f9f';
         const data = {
-            usuario_id: id_user,
+            usuario_id: userId,
             body: {...req.body}
         };
-        data.body.usuario_id = new ObjectId(id_user);
+        data.body.usuario_id = new ObjectId(userId);
         data.body.changes = [];
         data.body.status = "visible";
         const note = new Note();
         let resultPOST = await note.save(data);
         if(!resultPOST.data.acknowledged) return res.status(406).json({status: 406, message: "Note not saved"});
-        let resultGET = await note.getOneNoteById({id_user, id:resultPOST.data.insertedId});
+        let resultGET = await note.getOneNoteById({userId, id:resultPOST.data.insertedId});
         return res.status(201).json({status: 201, message: "Note created", data: resultGET.data});
     } catch (error) {
         let err = JSON.parse(error.message);

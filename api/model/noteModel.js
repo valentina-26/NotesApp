@@ -164,69 +164,82 @@ class Note extends Connect {
     }
 }
 
-  async searchNoteByTitleDescription(userId, q) {
-    try {
+async searchNoteByTitleDescription({ userId, searchTerm }) {
+  try {
       const { status, message, data: db } = await this.getConnect();
       const collection = db.collection('nota');
+
+      const searchRegex = new RegExp(searchTerm, 'i');
+
       const result = await collection.aggregate([
-        {
-          $match: {
-            status: "visible",
-            userId: new ObjectId(userId)
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            result: {
-              $cond: {
-                if: { $gt: [{ $size: "$changes" }, 1] },
-                then: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    { $arrayElemAt: ["$changes", -1] }
+          {
+              $match: {
+                  status: "visible",
+                  userId: new ObjectId(userId)
+              }
+          },
+          {
+              $addFields: {
+                  lastChange: {
+                      $cond: {
+                          if: { $gt: [{ $size: "$changes" }, 1] },
+                          then: { $arrayElemAt: ["$changes", -1] },
+                          else: "$$ROOT"
+                      }
+                  }
+              }
+          },
+          {
+              $replaceRoot: {
+                  newRoot: {
+                      $mergeObjects: [
+                          "$$ROOT",
+                          "$lastChange"
+                      ]
+                  }
+              }
+          },
+          {
+              $match: {
+                  $or: [
+                      { title: { $regex: searchRegex } },
+                      { description: { $regex: searchRegex } }
                   ]
-                },
-                else: "$$ROOT"
               }
-            }
-          }
-        },
-        {
-          $replaceRoot: { newRoot: "$result" }
-        },
-        {
-          $project: {
-            userId: 0,
-            changes: 0,
-            status: 0
-          }
-        },
-        {
-          $addFields: {
-            date: {
-              $cond: {
-                if: { $eq: ["$date", null] },
-                then: { $toDate: "$_id" },
-                else: "$date"
+          },
+          {
+              $project: {
+                  _id: 1,
+                  title: 1,
+                  description: 1,
+                  date: {
+                      $cond: {
+                          if: { $eq: ["$date", null] },
+                          then: { $toDate: "$_id" },
+                          else: "$date"
+                      }
+                  }
               }
-            }
+          },
+          {
+              $sort: { date: -1 } // Ordenar por fecha, más reciente primero
           }
-        }
       ]).toArray();
 
-      const texto = q.toLowerCase();
-
-      const resultCoincidence = result.filter(item =>
-        item.title.toLowerCase().includes(texto) ||
-        item.description.toLowerCase().includes(texto)
-      );
-
-      return { status: 200, message: "List of notes obtained", data: resultCoincidence };
-    } catch (error) {
-      throw new Error(JSON.stringify({ status: 500, message: "Error searching notes", data: error.message }));
-    }
+      return {
+          status: 200,
+          message: `Found ${result.length} notes matching the search criteria`,
+          data: result
+      };
+  } catch (error) {
+      console.error('Search error:', error);
+      throw new Error(JSON.stringify({
+          status: 500,
+          message: "Error searching notes",
+          data: error.message
+      }));
   }
+}
 
   async updateHistoryNote(_id, body, id_user) {
     try {
