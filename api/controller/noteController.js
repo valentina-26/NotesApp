@@ -19,16 +19,6 @@ exports.findAllNotes = async ( req, res)=>{
     }
 }
 
-/*exports.findAllNotes = async ( req, res)=>{
-    try {
-        const note = new Note();
-        let result = await note.getAllNotes({userId : new ObjectId ('6718def84aa9a9e82f7b1f8b')});
-        return res.status(result.status).json(result);
-    } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err)
-    }
-}*/
 
 /**
  * 
@@ -36,21 +26,19 @@ exports.findAllNotes = async ( req, res)=>{
  * @description  obtiene una nota por medio del id
  * @returns 
  */
-exports.findNoteById = async ( req, res)=>{
-    try{
-        const data = {
-            userId:"6718def84aa9a9e82f7b1f8b",
-            ...req.params
-        }
+exports.findNoteById = async (req, res) => {
+    try {
         const note = new Note();
-        let result = await note.getOneNoteById(data);
-        if(!result.message)return res.status(404).json({status:404,message:"note not found"})
+        const result = await note.getOneNoteById({
+            id: req.params.id,  // ID de la nota que viene en la URL
+            userId: new ObjectId('6716c1b762f9cc85af494515') // userId correcto
+        });
+        return res.status(result.status).json(result);
     } catch (error) {
         let err = JSON.parse(error.message);
         return res.status(err.status).json(err);
     }
-}
-
+};
 
 
 /**
@@ -62,7 +50,7 @@ exports.findNoteById = async ( req, res)=>{
 exports.FindAllNoteByTitle= async ( req, res)=>{
     try {
         const data = {
-            id_user: '6718def84aa9a9e82f7b1f8b',
+            id_user:'6718def84aa9a9e82f7b1f8b',
             ...req.query
         }
         const note = new Note();

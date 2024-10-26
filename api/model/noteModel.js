@@ -89,67 +89,80 @@ class Note extends Connect {
   }
   
 
-  async getOneNoteById(userId, id) {
+  async getOneNoteById({ userId, id }) {
     try {
-      const { status, message, data: db } = await this.getConnect();
-      const collection = db.collection('nota');
-      const [result] = await collection.aggregate([
-        {
-          $match: {
-            _id: new ObjectId(id),
-            status: "visible",
-            userId: new ObjectId(userId)
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            result: {
-              $cond: {
-                if: { $gt: [{ $size: "$changes" }, 1] },
-                then: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    { $arrayElemAt: ["$changes", -1] }
-                  ]
-                },
-                else: "$$ROOT"
-              }
+        const { status, message, data: db } = await this.getConnect();
+        const collection = db.collection('nota');
+        
+        const [result] = await collection.aggregate([
+            {
+                $match: {
+                    _id: new ObjectId(id),
+                    status: "visible",
+                    userId: userId
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    result: {
+                        $cond: {
+                            if: { $gt: [{ $size: "$changes" }, 1] },
+                            then: {
+                                $mergeObjects: [
+                                    "$$ROOT",
+                                    { $arrayElemAt: ["$changes", -1] }
+                                ]
+                            },
+                            else: "$$ROOT"
+                        }
+                    }
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$result" }
+            },
+            {
+                $project: {
+                    userId: 0,
+                    changes: 0,
+                    status: 0
+                }
+            },
+            {
+                $addFields: {
+                    date: {
+                        $cond: {
+                            if: { $eq: ["$date", null] },
+                            then: { $toDate: "$_id" },
+                            else: "$date"
+                        }
+                    }
+                }
             }
-          }
-        },
-        {
-          $replaceRoot: { newRoot: "$result" }
-        },
-        {
-          $project: {
-            userId: 0,
-            changes: 0,
-            status: 0
-          }
-        },
-        {
-          $addFields: {
-            date: {
-              $cond: {
-                if: { $eq: ["$date", null] },
-                then: { $toDate: "$_id" },
-                else: "$date"
-              }
-            }
-          }
+        ]).toArray();
+
+        if (!result) {
+            return { 
+                status: 404, 
+                message: "Note not found", 
+                data: null 
+            };
         }
-      ]).toArray();
 
-      if (!result.length) {
-        return { status: 404, message: "Note not found", data: null };
-      }
-
-      return { status: 200, message: "Note obtained successfully", data: result[0] };
+        return { 
+            status: 200, 
+            message: "Note obtained successfully", 
+            data: result 
+        };
     } catch (error) {
-      throw new Error(JSON.stringify({ status: 500, message: "Error getting note", data: error.message }));
+        throw new Error(JSON.stringify({ 
+            status: 500, 
+            message: "Error getting note", 
+            data: error.message 
+        }));
     }
-  }
+}
 
   async searchNoteByTitleDescription(userId, q) {
     try {
