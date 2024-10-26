@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb");
 const Note = require("../model/noteModel");
 
 /**
@@ -6,16 +7,28 @@ const Note = require("../model/noteModel");
  * @description  obtiene una lista de todas notas
  * @returns 
  */
+
 exports.findAllNotes = async ( req, res)=>{
     try {
         const note = new Note();
-        let result = await note.getAllNotes({userId : "6718def84aa9a9e82f7b1f8b"});
+        const result = await note.getAllNotes({userId:new ObjectId ('6716c1b762f9cc85af494515')}); 
         return res.status(result.status).json(result);
     } catch (error) {
         let err = JSON.parse(error.message);
         return res.status(err.status).json(err)
     }
 }
+
+/*exports.findAllNotes = async ( req, res)=>{
+    try {
+        const note = new Note();
+        let result = await note.getAllNotes({userId : new ObjectId ('6718def84aa9a9e82f7b1f8b')});
+        return res.status(result.status).json(result);
+    } catch (error) {
+        let err = JSON.parse(error.message);
+        return res.status(err.status).json(err)
+    }
+}*/
 
 /**
  * 
