@@ -310,94 +310,103 @@ async updateHistoryNote({ _id, body, userId }) {
   }
 }
 
-async deleteNotesById({ id, userId }) {
-  try {
+async deleteNotesById(noteId, userId) {
+    try {
       const { data: db } = await this.getConnect();
       const collection = db.collection('nota');
-
-      // Primero imprimir los datos que vamos a usar para debug
-      console.log('Attempting to delete note with:', {
-          _id: id,
-          userId: userId
+      
+      // Log para debugging
+      console.log('Searching with:', {
+        noteId: noteId,
+        userId: userId,
+        searchCriteria: {
+          _id: new ObjectId(noteId),
+          userId: userId,
+          status: "visible"
+        }
       });
-
+  
       const result = await collection.updateOne(
-          {
-              _id: new ObjectId(id),
-              userId: userId,  // No convertimos a ObjectId ya que mencionaste que es string
-              status: "visible"
-          },
-          {
-              $set: { 
-                  status: "not visible"
-              }
+        {
+          _id: new ObjectId(noteId),
+          userId: new ObjectId(userId), // Convertimos userId a ObjectId
+          status: "visible"
+        },
+        {
+          $set: { 
+            status: "not visible"
           }
+        }
       );
-
-      console.log('Update result:', result); // Para debug
-
+  
+      console.log('Update result:', result); // Log del resultado
+  
       if (result.matchedCount === 0) {
-          return {
-              status: 404,
-              message: "Note not found"
-          };
+        // Verificamos por qué no se encontró
+        const note = await collection.findOne({ _id: new ObjectId(noteId) });
+        console.log('Note state:', note);
+        
+        return {
+          status: 404,
+          message: "Note not found or already deleted"
+        };
       }
-
-      return { 
-          status: 200, 
-          message: "Note marked as not visible successfully",
-          data: {
-              modified: result.modifiedCount,
-              id: id
-          }
+  
+      return {
+        status: 200,
+        message: "Note deleted successfully",
+        data: {
+          id: noteId,
+          modified: result.modifiedCount
+        }
       };
-
-  } catch (error) {
-      console.error('Error in deleteNotesById:', error);
-      throw new Error(JSON.stringify({ 
-          status: 500, 
-          message: "Error deleting note", 
-          data: error.message 
-      }));
+  
+    } catch (error) {
+      console.error('Model error:', error);
+      throw new Error("Error deleting note: " + error.message);
+    }
   }
-}
+  
+
+
+
+
+
 
 
 async save(userId, body) {
-  try {
-      const { data: db } = await this.getConnect(); // Asegúrate de que esta función obtenga la conexión correctamente
-      const collection = db.collection('nota');
+    try {
+        const { data: db } = await this.getConnect();
+        const collection = db.collection('nota');
 
-      // Asegúrate de que los tipos de datos sean correctos
-      if (typeof body.title !== 'string' || typeof body.description !== 'string') {
-          throw new Error("Invalid data types for title or description");
-      }
+        // Validar tipos de datos
+        if (typeof body.title !== 'string' || typeof body.description !== 'string') {
+            throw new Error(JSON.stringify({
+                status: 400,
+                message: "Invalid data types for title or description"
+            }));
+        }
 
-      const noteToInsert = {
-          title: body.title,
-          description: body.description,
-          usuario_id: new ObjectId(userId), // Asegúrate de que userId sea un ObjectId válido
-          status: "visible",
-          changes: [] // Inicializa los cambios como un array vacío
-      };
+        const noteToInsert = {
+            title: body.title,
+            description: body.description,
+            userId: new ObjectId(userId),
+            status: "visible",
+            changes: []
+        };
 
-      const result = await collection.insertOne(noteToInsert);
+        const result = await collection.insertOne(noteToInsert);
+        
+        return {
+            data: result
+        };
 
-      return {
-          status: 201,
-          message: "Note saved successfully",
-          data: {
-              _id: result.insertedId,
-              ...noteToInsert
-          }
-      };
-  } catch (error) {
-      throw new Error(JSON.stringify({
-          status: 500,
-          message: "Error saving note",
-          data: error.message
-      }));
-  }
+    } catch (error) {
+        throw new Error(JSON.stringify({
+            status: 500,
+            message: error.message
+        }));
+    }
 }
 }
 
