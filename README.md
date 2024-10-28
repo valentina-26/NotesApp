@@ -1,3 +1,11 @@
+# Variables de entorno
+
+EXPRESS_HOST= localhost
+EXPRESS_PORT=5011
+
+MONGO_URI="mongodb://root:campus2023@localhost:27017"
+MONGO_DB="NotasApp"
+
 # API de Notas y Usuarios
 
 ## Base URL

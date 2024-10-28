@@ -20,6 +20,20 @@ class User extends Connect {
           throw new Error(JSON.stringify({ status: 500, message: "Error getting all notes", data: error }));
         }
       }
+
+
+      async login(body) {
+        try {
+            const { status, message, data: db } = await this.getConnect();
+            const collection = db.collection('usuario');
+            const [resultNickName] = await collection.find({ nickName: body.nickName }).toArray();
+            if (resultNickName) return { status: 200, message: "User found", data: resultNickName };
+            return { status: 404, message: "User not found" };
+        } catch (error) {
+            throw new Error(JSON.stringify({ status: 500, message: "Error getting all notes", data: error }));
+        }
+    }
+    
       
       
 

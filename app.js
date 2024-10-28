@@ -4,7 +4,7 @@ const noteRouter = require('./api/router/noteRouter.js');
 const userRouter = require('./api/router/userRouter.js');
 const error = require('./api/middleware/errorHandler.js');
 const session = require('./api/middleware/sessionConfig.js');
-//const auth = require('./api/middleware/decodedJWT.js')
+const auth = require('./api/middleware/decodedJWT.js')
 const https = require('https');
 const fs = require('fs');
 const path = require('path'); 
@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rutas
 app.use("/", indexRouter);
-app.use("/notes", noteRouter);
+app.use("/notes",auth, noteRouter);
 app.use("/users", userRouter);
 
 // Manejar errores de JSON
