@@ -11,51 +11,160 @@ const fs = require('fs');
  * @description  crear un usuario 
  * TODO: devuelve un token con jwt
  */
-exports.AddNewUser = async ( req, res)=>{
+exports.AddNewUser = async (req, res) => {
     try {
-        const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ status: 400, message: "Error in validating input data", data: errors.array() });
+        // 1. Crear instancia del modelo
         let user = new User();
-        req.body.password = await bcrypt.hash(req.body.password, 10)
+
+        // 2. Hashear la contraseña
+        req.body.password = await bcrypt.hash(req.body.password, 10);
+
+        // 3. Guardar usuario
         let resultPOST = await user.save(req.body);
-        if(resultPOST.status == 200) return res.status(resultPOST.status).json(resultPOST);
-        delete req.body.password;
-        req.body._id = resultPOST.data.insertedId;
-        const SECRET_KEY = fs.readFileSync('./certificate.cer');
-        const token = jwt.sign(req.body, SECRET_KEY.toString('utf8'), { expiresIn: 1800000 });
+
+        // 4. Si el usuario ya existe, retornar mensaje
+        if (resultPOST.status === 200) {
+            return res.status(resultPOST.status).json(resultPOST);
+        }
+
+        // 5. Preparar datos para el token
+        const userData = {
+            _id: resultPOST.data.insertedId,
+            nickName: req.body.nickName,
+            email: req.body.email
+        };
+
+        // 6. Leer la clave secreta
+        const SECRET_KEY = fs.readFileSync('./certificate.csr', 'utf8');
+
+        // 7. Generar token
+        const token = jwt.sign(userData, SECRET_KEY, { 
+            expiresIn: '30m' // 30 minutos
+        });
+
+        // 8. Inicializar sesión si no existe
+        if (!req.session) {
+            req.session = {};
+        }
+
+        // 9. Guardar token en sesión
         req.session.auth = token;
-        return res.status(202).json({status: 202, message: "User created and logged in"})
+
+        // 10. Enviar respuesta
+        return res.status(201).json({
+            status: 201,
+            message: "Usuario creado y sesión iniciada",
+            token: token // Opcional: enviar token al cliente
+        });
+
     } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
+        console.error('Error completo:', error);
+        
+        // Manejar el error de manera más robusta
+        let errorResponse;
+        try {
+            errorResponse = JSON.parse(error.message);
+        } catch (parseError) {
+            errorResponse = {
+                status: 500,
+                message: "Error interno del servidor",
+                error: error.message
+            };
+        }
+
+        return res.status(errorResponse.status || 500).json(errorResponse);
     }
-      
-}
+};
 
 /**
  * 
  * @method singInUser
  * @description  Permite al usuario iniciar sesion
  */
-module.exports.signInUser = async (req, res) => {
+exports.signInUser = async (req, res) => {
     try {
-        console.log("vhdsgjkhsdlg")
-        let user = new User();
-        let resultPOST = await user.login(req.body);
-        if (resultPOST.status == 404) return res.status(resultPOST.status).json(resultPOST);
-        req.body.password = await bcrypt.compare(req.body.password, resultPOST.data.password);
-        if (!req.body.password) return res.status(401).json({ status: 401, message: "Incorrect password" });
-        req.body = resultPOST.data;
-        delete req.body.password;
-        const SECRET_KEY = fs.readFileSync('./certificate.csr');
-        const token = jwt.sign(req.body, SECRET_KEY.toString('utf8'), { expiresIn: 1800000 });
+        const user = new User();
+        const result = await user.login(req.body);
+
+        if (result.status === 404) {
+            return res.status(404).json({
+                status: 404,
+                message: "Usuario no encontrado"
+            });
+        }
+
+        // Verificar contraseña
+        const isPasswordValid = await bcrypt.compare(req.body.password, result.data.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                status: 401,
+                message: "Contraseña incorrecta"
+            });
+        }
+
+        // Crear token
+        const SECRET_KEY = fs.readFileSync('./certificate.csr', 'utf8');
+        const token = jwt.sign({
+            _id: result.data._id,
+            nickName: result.data.nickName,
+            email: result.data.email
+        }, SECRET_KEY, { expiresIn: '30m' });
+
+        // Guardar en sesión
         req.session.auth = token;
-        return res.status(202).json({ status: 202, message: "User logged in" });
+        req.session.userId = result.data._id;
+
+        // Forzar guardado de sesión
+        return new Promise((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Error al guardar sesión:', err);
+                    reject(err);
+                }
+                
+                console.log('Sesión guardada:', req.session);
+                resolve(res.status(200).json({
+                    status: 200,
+                    message: "Login exitoso",
+                    token: token
+                }));
+            });
+        });
+
     } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
+        console.error('Error en login:', error);
+        const errorResponse = {
+            status: 500,
+            message: "Error en el servidor",
+            error: error.message
+        };
+        return res.status(500).json(errorResponse);
     }
-}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**

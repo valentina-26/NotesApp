@@ -14,13 +14,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(session)
+app.use((req, res, next) => {
+    console.log('Sesión actual:', req.session);
+    console.log('ID de sesión:', req.sessionID);
+    next();
+});
+
 // Rutas
 app.use("/", indexRouter);
 app.use("/notes",auth, noteRouter);
 app.use("/users", userRouter);
 
 // Manejar errores de JSON
-app.use(session);
 app.use(error.jsonParseErrorHandler);
 
 // Usar path.join para servir archivos estáticos

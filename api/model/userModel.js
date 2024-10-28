@@ -21,16 +21,31 @@ class User extends Connect {
         }
       }
 
-
       async login(body) {
         try {
             const { status, message, data: db } = await this.getConnect();
             const collection = db.collection('usuario');
-            const [resultNickName] = await collection.find({ nickName: body.nickName }).toArray();
-            if (resultNickName) return { status: 200, message: "User found", data: resultNickName };
-            return { status: 404, message: "User not found" };
+            const [user] = await collection.find({ 
+                nickName: body.nickName 
+            }).toArray();
+            if (user) {
+                return { 
+                    status: 200, 
+                    message: "Usuario encontrado", 
+                    data: user 
+                };
+            }
+            return { 
+                status: 404, 
+                message: "Usuario no encontrado" 
+            };
         } catch (error) {
-            throw new Error(JSON.stringify({ status: 500, message: "Error getting all notes", data: error }));
+            console.error('Error en login:', error);
+            throw new Error(JSON.stringify({ 
+                status: 500, 
+                message: "Error al intentar iniciar sesión", 
+                data: error.message 
+            }));
         }
     }
     

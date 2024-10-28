@@ -8,14 +8,30 @@ const Note = require("../model/noteModel");
  * @returns 
  */
 
-exports.findAllNotes = async ( req, res)=>{
+exports.findAllNotes = async (req, res) => {
     try {
+        console.log("Controller - req.data:", req.data);
+        
+        if (!req.data || !req.data._id) {
+            return res.status(400).json({
+                status: 400,
+                message: "Invalid user data",
+                data: null
+            });
+        }
+
         const note = new Note();
-        const result = await note.getAllNotes({userId:new ObjectId ('6716c1b762f9cc85af494515')}); 
+        const result = await note.getAllNotes({ userId: req.data._id });
+        
+        if (result.status === 204) {
+            return res.status(204).send();
+        }
+        
         return res.status(result.status).json(result);
     } catch (error) {
+        console.error("Controller error:", error);
         let err = JSON.parse(error.message);
-        return res.status(err.status).json(err)
+        return res.status(err.status).json(err);
     }
 }
 
@@ -31,7 +47,7 @@ exports.findNoteById = async (req, res) => {
         const note = new Note();
         const result = await note.getOneNoteById({
             id: req.params.id,  // ID de la nota que viene en la URL
-            userId: new ObjectId('6716c1b762f9cc85af494515') // userId correcto
+            userId: new ObjectId({ userId: req.data._id }) // userId correcto
         });
         return res.status(result.status).json(result);
     } catch (error) {
@@ -50,7 +66,7 @@ exports.findNoteById = async (req, res) => {
 exports.FindAllNoteByTitle = async (req, res) => {
     try {
         const data = {
-            userId: '6716c1b762f9cc85af494515',
+            userId: { userId: req.data._id },
             searchTerm: req.query.q?.trim()
         };
 
@@ -95,7 +111,7 @@ exports.FindAllNoteByTitle = async (req, res) => {
 exports.updateNote = async (req, res) => {
     try {
         const data = {
-            userId: new ObjectId('6716c1b762f9cc85af494515'),
+            userId: new ObjectId({ userId: req.data._id }),
             body: {
                 ...req.body,
                 date: new Date()
@@ -143,7 +159,7 @@ exports.updateNote = async (req, res) => {
 exports.deleteNoteById = async (req, res) => {
     try {
       const noteId = req.params.id;
-      const userId = '6716c1b762f9cc85af494515'; // ID exacto de la imagen
+      const userId = { userId: req.data._id }; // ID exacto de la imagen
   
       console.log('Controller params:', {
         noteId,
@@ -177,7 +193,7 @@ exports.deleteNoteById = async (req, res) => {
 
 exports.save = async (req, res) => {
     try {
-        let userId = '6716c1b762f9cc85af494515';
+        let userId = { userId: req.data._id };
         const data = {
             userId: userId,
             body: { ...req.body }

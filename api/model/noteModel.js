@@ -6,88 +6,173 @@ class Note extends Connect {
     super();
   }
 
+
   async getAllNotes(userId) {
-    try {
-      const { status, message, data: db } = await this.getConnect();
-      const collection = db.collection('nota');
-      
-       
-        // Debug: Mostrar el userId que estamos buscando
-        console.log("userId que estamos buscando:", userId);
-        console.log("Tipo de userId que buscamos:", typeof userId.userId);
-        console.log("Valor de userId que buscamos:", userId.userId.toString());
-
-        // Obtener todos los documentos y mostrar sus userIds
-        const allDocs = await collection.find({}).toArray();
-        console.log("UserIds en la base de datos:");
-        allDocs.forEach(doc => {
-            console.log({
-                docId: doc._id.toString(),
-                userId: doc.userId.toString(),
-                matches: doc.userId.toString() === userId.userId.toString()
-            });
-        });
-
-        // Intenta buscar con el userId directamente
-        const userDocs = await collection.find({ 
-            userId: userId.userId 
-        }).toArray();
-        console.log("Documentos encontrados con userId:", userDocs.length);
-
-      const result = await collection.aggregate([
-        {
-          $match: {
-            status: "visible",
-            userId: userId.userId
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            result: {
-              $cond: {
-                if: { $gt: [{ $size: "$changes" }, 1] },
-                then: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    { $arrayElemAt: ["$changes", -1] }
-                  ]
-                },
-                else: "$$ROOT"
-              }
-            }
-          }
-        },
-        {
-          $replaceRoot: { newRoot: "$result" }
-        },
-        {
-          $project: {
-            userId: 0,
-            changes: 0,
-            status: 0
-          }
-        },
-        {
-          $addFields: {
-            date: {
-              $cond: {
-                if: { $eq: ["$date", null] },
-                then: { $toDate: "$_id" },
-                else: "$date"
-              }
-            }
-          }
-        }
-      ]).toArray();
+      try {
+          const { status, message, data: db } = await this.getConnect();
+          const collection = db.collection('nota');
+          
+          // Convertir el userId a ObjectId
+          const userObjectId = new ObjectId(userId.userId);
+          
+          console.log("\n=== DEBUG INFORMACIÓN ===");
+          console.log("1. userId recibido:", userId);
+          console.log("1.1 userId convertido a ObjectId:", userObjectId);
+          
+          // Verificar documentos existentes
+          const allDocs = await collection.find({}).limit(5).toArray();
+          console.log("2. Muestra de documentos en la colección:", 
+              allDocs.map(doc => ({
+                  _id: doc._id,
+                  userId: doc.userId,
+                  status: doc.status
+              }))
+          );
   
-      console.log("Resultado de la consulta:", result);
-      return { status: 200, message: "List of notes obtained", data: result };
-    } catch (error) {
-      throw new Error(JSON.stringify({ status: 500, message: "Error getting all notes", data: error.message }));
-    }
+          // Búsqueda específica con ObjectId
+          const simpleFind = await collection.find({ 
+              userId: userObjectId,
+              status: "visible" 
+          }).toArray();
+          console.log("3. Búsqueda simple:", simpleFind.length, "documentos encontrados");
+  
+          // Realizar la agregación con pipeline modificado usando ObjectId
+          const result = await collection.aggregate([
+              {
+                  $match: {
+                      $and: [
+                          { userId: userObjectId },
+                          { status: { $eq: "visible" } }
+                      ]
+                  }
+              },
+              {
+                  $project: {
+                      _id: 0,
+                      result: {
+                          $cond: {
+                              if: { $gt: [{ $ifNull: [{ $size: { $ifNull: ["$changes", []] } }, 0] }, 1] },
+                              then: {
+                                  $mergeObjects: [
+                                      "$$ROOT",
+                                      { 
+                                          $ifNull: [
+                                              { $arrayElemAt: ["$changes", -1] },
+                                              {}
+                                          ]
+                                      }
+                                  ]
+                              },
+                              else: "$$ROOT"
+                          }
+                      }
+                  }
+              },
+              {
+                  $replaceRoot: { newRoot: "$result" }
+              },
+              {
+                  $project: {
+                      userId: 0,
+                      changes: 0,
+                      status: 0
+                  }
+              },
+              {
+                  $addFields: {
+                      date: {
+                          $cond: {
+                              if: { $eq: [{ $ifNull: ["$date", null] }, null] },
+                              then: { $toDate: "$_id" },
+                              else: { $toDate: "$date" }
+                          }
+                      }
+                  }
+              }
+          ]).toArray();
+  
+          console.log("4. Resultado final de la agregación:", result.length, "documentos");
+          
+          if (!result || result.length === 0) {
+              console.log("5. No se encontraron notas para el usuario");
+              return {
+                  status: 204,
+                  message: "No notes found for this user",
+                  data: []
+              };
+          }
+  
+          console.log("=== FIN DEBUG ===\n");
+  
+          return {
+              status: 200,
+              message: "List of notes obtained",
+              data: result
+          };
+  
+      } catch (error) {
+          console.error("\n=== ERROR DEBUG ===");
+          console.error("Error completo:", error);
+          console.error("=== FIN ERROR DEBUG ===\n");
+          
+          // Si el error es de conversión de ObjectId, devolver un mensaje más claro
+          if (error.message.includes("ObjectId")) {
+              throw new Error(JSON.stringify({
+                  status: 400,
+                  message: "Invalid user ID format",
+                  data: error.message
+              }));
+          }
+          
+          throw new Error(JSON.stringify({
+              status: 500,
+              message: "Error getting all notes",
+              data: error.message
+          }));
+      }
   }
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async getOneNoteById({ userId, id }) {
     try {
