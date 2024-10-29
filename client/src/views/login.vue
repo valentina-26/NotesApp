@@ -95,23 +95,22 @@ const handleSubmit = async () => {
     });
 
     const data = await response.json();
-    console.log("Datos de respuesta:", data); // Verificar la respuesta
+    console.log("Datos de respuesta:", data);
 
     if (response.ok && data.token) {
       localStorage.setItem('token', data.token);
       console.log("Redirigiendo a /notes");
-      router.push('/notes'); // Verifica que router esté definido
+      await router.push({ name: 'notes' }); // Usamos el nombre de la ruta
     } else {
       throw new Error(data.message || 'Error en la autenticación');
     }
-  } catch (error) {
-    console.error('Error:', error);
-    error.value = error.message.includes('Failed to fetch')
+  } catch (err) {
+    console.error('Error:', err);
+    error.value = err.message.includes('Failed to fetch')
       ? 'Error de conexión: No se pudo contactar con el servidor'
-      : `Error: ${error.message}`;
+      : `Error: ${err.message}`;
   } finally {
     loading.value = false;
   }
 };
-
 </script>
