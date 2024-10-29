@@ -12,6 +12,7 @@ export default defineConfig({
   root: join(__dirname, 'client'),
   plugins: [vue()],
   build: {
+    base:'https://valentina-26.github.io/NotesApp/',
     outDir: join(__dirname, 'client/dist'),
     emptyOutDir: true
   },
