@@ -14,7 +14,13 @@ export default defineConfig({
   build: {
     base:'https://valentina-26.github.io/NotesApp/',
     outDir: join(__dirname, 'client/dist'),
-    emptyOutDir: true
+    emptyOutDir: true,
+    manifest: true,
+    rollupOptions: {
+      // overwrite default .html entry
+      input: 'client/src/main.js',
+    },
+
   },
   server: {
     https: {

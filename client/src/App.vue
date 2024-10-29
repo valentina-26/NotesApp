@@ -1,5 +1,6 @@
 <script setup>
 import HelloWorld from '../src/views/login.vue'
+// add the beginning of your app entry
 </script>
 
 <template>
