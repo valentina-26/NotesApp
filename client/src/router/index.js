@@ -1,14 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import doctor from '../views/HelloWorld.vue'
-import centro from '../views/Centro.vue'
+
 import nota from '../views/HelloWorld.vue'
+import login from '../views/login.vue'
+import createAccount from '../views/create.vue'
 
 
 
 const routes = [
   { path: '/notes', component: nota},
-  { path: '/users', component: nota},
+  { path: '/login', component: login},
+  { path: '/createAccount', component: createAccount},
 
 ]
 

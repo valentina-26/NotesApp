@@ -21,6 +21,18 @@ export default defineConfig({
       cert: certificate,
     },
     host: 'localhost',
-    port: 3000,
+    port: 5011,
+    proxy: {
+      '/users': {
+        target: 'https://localhost:5011',
+        secure: false,
+        rewrite: (path) => path.replace(/^\/users/, '')
+      },
+      '/notes': {
+        target: 'https://localhost:5011',
+        secure: false,
+        rewrite: (path) => path.replace(/^\/notes/, '')
+      }
+    }
   }
 });
