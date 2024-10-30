@@ -15,11 +15,11 @@
           />
         </div>
         <div>
-          <label for="nickname" class="block text-sm font-medium text-gray-300">Nickname</label>
+          <label for="nickName" class="block text-sm font-medium text-gray-300">Nickname</label>
           <input
             type="text"
-            id="nickname"
-            v-model="formData.nickname"
+            id="nickName"
+            v-model="formData.nickName"
             required
             class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
             placeholder="Your nickname"
@@ -72,9 +72,10 @@
         </div>
         <button
           type="submit"
-          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+          :disabled="isLoading"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50"
         >
-          Create Account
+          {{ isLoading ? 'Creating Account...' : 'Create Account' }}
         </button>
       </form>
       <div class="mt-6 text-center">
@@ -96,13 +97,14 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const formData = ref({
   name: '',
-  nickname: '',
+  nickName: '', // Cambiado de nickname a nickName para coincidir con el backend
   email: '',
   password: '',
 });
 const agree = ref(false);
 const passwordVisible = ref(false);
 const errorMessage = ref('');
+const isLoading = ref(false);
 
 const togglePasswordVisibility = () => {
   passwordVisible.value = !passwordVisible.value;
@@ -115,22 +117,38 @@ const createAccount = async () => {
   }
 
   try {
+    isLoading.value = true;
+    errorMessage.value = '';
+
     const response = await fetch('https://localhost:5011/users', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-version': '1.0.0'
       },
       body: JSON.stringify(formData.value),
+      credentials: 'include' // Importante para manejar las cookies de sesión
     });
+
     const result = await response.json();
 
-    if (response.ok) {
-      router.push('/home');
+    if (response.status === 201) {
+      // Guardar el token en localStorage si lo necesitas
+      if (result.token) {
+        localStorage.setItem('authToken', result.token);
+      }
+      // Redireccionar a la página de notas
+      router.push('/notes');
     } else {
+      // Manejar otros casos de respuesta
       errorMessage.value = result.message || 'An error occurred while creating the account.';
     }
   } catch (error) {
+    console.error('Error:', error);
     errorMessage.value = 'An unexpected error occurred. Please try again.';
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -138,7 +156,3 @@ const goToLogin = () => {
   router.push('/login');
 };
 </script>
-
-<style scoped>
-/* Add any additional styles here if needed */
-</style>

@@ -24,16 +24,20 @@ exports.findAllNotes = async (req, res) => {
         const result = await note.getAllNotes({ userId: req.data._id });
         
         if (result.status === 204) {
-            return res.status(204).send();
+            return res.status(200).json({
+              status: 200,
+              message: "No notes found",
+              data: []
+            });
+          }
+          
+          return res.status(result.status).json(result);
+        } catch (error) {
+          console.error("Controller error:", error);
+          let err = JSON.parse(error.message);
+          return res.status(err.status).json(err);
         }
-        
-        return res.status(result.status).json(result);
-    } catch (error) {
-        console.error("Controller error:", error);
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
-    }
-}
+      }
 
 
 /**
