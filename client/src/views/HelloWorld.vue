@@ -243,6 +243,12 @@ const fetchNotes = async () => {
       }
     })
     
+    
+    if (response.status === 204) {
+      notes.value = []
+      return
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
