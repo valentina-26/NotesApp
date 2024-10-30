@@ -1,18 +1,13 @@
-<script setup>
-import HelloWorld from '../src/views/login.vue'
-</script>
-
 <template>
   <div>
-    <a href="https://vitejs.dev" target="_blank">
-
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      
-    </a>
+    <a href="https://vitejs.dev" target="_blank"></a>
+    <a href="https://vuejs.org/" target="_blank"></a>
+    <router-view />
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
+
+<script setup>
+</script>
 
 <style scoped>
 .logo {
