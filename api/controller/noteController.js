@@ -163,7 +163,7 @@ exports.updateNote = async (req, res) => {
 exports.deleteNoteById = async (req, res) => {
     try {
       const noteId = req.params.id;
-      const userId = { userId: req.data._id }; // ID exacto de la imagen
+      const userId = req.data._id; 
   
       console.log('Controller params:', {
         noteId,
@@ -195,49 +195,56 @@ exports.deleteNoteById = async (req, res) => {
   };
 
 
-exports.save = async (req, res) => {
+  exports.save = async (req, res) => {
     try {
-        let userId = { userId: req.data._id };
-        const data = {
-            userId: userId,
-            body: { ...req.body }
-        };
-
-        // Validar los campos
-        if (!data.body.title || typeof data.body.title !== 'string' || 
-            !data.body.description || typeof data.body.description !== 'string') {
-            return res.status(400).json({ 
-                status: 400, 
-                message: "Invalid title or description" 
-            });
-        }
-
-        const note = new Note();
-        let resultPOST = await note.save(data.userId, data.body);
-        
-        if (!resultPOST.data.acknowledged) {
-            return res.status(406).json({ 
-                status: 406, 
-                message: "Note not saved" 
-            });
-        }
-
-        let resultGET = await note.getOneNoteById({ 
-            userId, 
-            id: resultPOST.data.insertedId 
+      const userId = req.data._id; // Get userId directly as a string
+      const data = {
+        body: { ...req.body }
+      };
+  
+      // Validate the fields
+      if (!data.body.title || typeof data.body.title !== 'string' ||
+          !data.body.description || typeof data.body.description !== 'string') {
+        return res.status(400).json({
+          status: 400,
+          message: "Invalid title or description"
         });
-
-        return res.status(201).json({ 
-            status: 201, 
-            message: "Note created", 
-            data: resultGET.data 
+      }
+  
+      const note = new Note();
+      let resultPOST = await note.save(userId, data.body);
+      
+      if (!resultPOST.data.acknowledged) {
+        return res.status(406).json({
+          status: 406,
+          message: "Note not saved"
         });
-
+      }
+  
+      let resultGET = await note.getOneNoteById({
+        userId,
+        id: resultPOST.data.insertedId
+      });
+  
+      return res.status(201).json({
+        status: 201,
+        message: "Note created",
+        data: resultGET.data
+      });
     } catch (error) {
-        let err = JSON.parse(error.message);
-        return res.status(err.status).json(err);
+      let err;
+      try {
+        err = JSON.parse(error.message);
+      } catch {
+        err = {
+          status: 500,
+          message: error.message
+        };
+      }
+      return res.status(err.status).json(err);
     }
-};
+  };
+  
 
 
 

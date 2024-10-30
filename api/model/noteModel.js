@@ -459,40 +459,45 @@ async deleteNotesById(noteId, userId) {
 
 
 
-async save(userId, body) {
+  async save(userId, body) {
     try {
-        const { data: db } = await this.getConnect();
-        const collection = db.collection('nota');
-
-        // Validar tipos de datos
-        if (typeof body.title !== 'string' || typeof body.description !== 'string') {
-            throw new Error(JSON.stringify({
-                status: 400,
-                message: "Invalid data types for title or description"
-            }));
-        }
-
-        const noteToInsert = {
-            title: body.title,
-            description: body.description,
-            userId: new ObjectId(userId),
-            status: "visible",
-            changes: []
-        };
-
-        const result = await collection.insertOne(noteToInsert);
-        
-        return {
-            data: result
-        };
-
-    } catch (error) {
+      const { data: db } = await this.getConnect();
+      const collection = db.collection('nota');
+  
+      // Validate data types
+      if (typeof body.title !== 'string' || typeof body.description !== 'string') {
         throw new Error(JSON.stringify({
-            status: 500,
-            message: error.message
+          status: 400,
+          message: "Invalid data types for title or description"
         }));
+      }
+  
+      // Create note object with proper ObjectId conversion
+      const noteToInsert = {
+        title: body.title,
+        description: body.description,
+        userId: new ObjectId(userId), // Convert string userId to ObjectId
+        status: "visible",
+        changes: []
+      };
+  
+      const result = await collection.insertOne(noteToInsert);
+      
+      return {
+        data: result
+      };
+    } catch (error) {
+      // If error is already formatted as JSON string, pass it through
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      // Otherwise, format the error
+      throw new Error(JSON.stringify({
+        status: 500,
+        message: error.message
+      }));
     }
-}
+  }
 }
 
 module.exports = Note;
