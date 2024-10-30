@@ -2,6 +2,7 @@
   <div class="min-h-screen bg-gray-900 text-white flex flex-col">
     <template v-if="!isEditing">
       <header class="p-4 flex justify-between items-center">
+        <div class="mb-4 text-2xl font-extrabold" >NOTES </div>
         <div class="flex space-x-4">
           <button @click="toggleSearch" class="focus:outline-none">
             <SearchIcon class="w-6 h-6" />
@@ -146,8 +147,9 @@
           <button 
             @click="saveChanges"
             class="px-4 py-2 rounded bg-green-500 text-white"
+            :disabled="isLoading"
           >
-            Guardar
+            {{ isLoading ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </div>
@@ -204,33 +206,76 @@ const transformNote = (serverNote) => {
   }
 }
 
-const discardChanges = () => {
-  showSaveModal.value = false
-  isEditing.value = false
-  currentNote.value = { title: '', description: '' }
+const handleSaveAndNavigate = async () => {
+  try {
+    isLoading.value = true
+
+    if (!currentNote.value.title?.trim() || !currentNote.value.description?.trim()) {
+      error.value = 'El título y la descripción son requeridos'
+      return false
+    }
+
+    const noteData = {
+      title: currentNote.value.title.trim(),
+      description: currentNote.value.description.trim()
+    }
+
+    const response = await fetch(`${API_URL}/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-version': '1.0.0'
+      },
+      body: JSON.stringify(noteData)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Error al guardar la nota')
+    }
+
+    // Resetear el estado
+    currentNote.value = { title: '', description: '' }
+    isEditing.value = false
+    showSaveModal.value = false
+
+    // Recargar la lista de notas y la página
+    await fetchNotes()
+    location.href = '/notes'
+    
+    return true
+  } catch (err) {
+    error.value = err.message || 'Error al guardar la nota'
+    console.error('Error al guardar:', err)
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const saveNote = async () => {
+  const saved = await handleSaveAndNavigate()
+  if (saved) {
+    isEditing.value = false
+    showSaveModal.value = false
+  }
 }
 
 const saveChanges = async () => {
   showSaveModal.value = false
-  await saveNote()
-  isEditing.value = false // Salir del modo de edición después de guardar
+  const saved = await handleSaveAndNavigate()
+  if (saved) {
+    isEditing.value = false
+    location.href = '/notes'
+  }
 }
 
-const createFetchOptions = (method = 'GET', body = null) => {
-  const options = {
-    method,
-    headers: {
-      'x-version': '1.0.0',
-      'Accept': 'application/json'
-    }
-  }
-
-  if (body) {
-    options.headers['Content-Type'] = 'application/json'
-    options.body = JSON.stringify(body)
-  }
-
-  return options
+const discardChanges = () => {
+  showSaveModal.value = false
+  currentNote.value = { title: '', description: '' }
+  isEditing.value = false
+  location.href = '/notes'
 }
 
 const fetchNotes = async () => {
@@ -242,7 +287,6 @@ const fetchNotes = async () => {
         'x-version': '1.0.0'
       }
     })
-    
     
     if (response.status === 204) {
       notes.value = []
@@ -293,82 +337,6 @@ const createNewNote = () => {
   isEditing.value = true
 }
 
-const saveNote = async () => {
-  try {
-    isLoading.value = true
-
-    if (!currentNote.value.title?.trim() || !currentNote.value.description?.trim()) {
-      error.value = 'El título y la descripción son requeridos'
-      return
-    }
-
-    const noteData = {
-      title: currentNote.value.title.trim(),
-      description: currentNote.value.description.trim()
-    }
-
-    const response = await fetch(`${API_URL}/notes`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-version': '1.0.0'
-      },
-      body: JSON.stringify(noteData)
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Error al guardar la nota')
-    }
-
-    const result = await response.json()
-    
-    const newNote = transformNote(result.data)
-    
-    notes.value.unshift(newNote)
-    
-    currentNote.value = { title: '', description: '' }
-    isEditing.value = false // Salir del modo de edición
-    
-    console.log('Nota creada exitosamente')
-    
-    // Recargar las notas
-    await fetchNotes()
-    
-  } catch (err) {
-    error.value = err.message || 'Error al guardar la nota'
-    console.error('Error al guardar:', err)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const editNote = async (index) => {
-  try {
-    isLoading.value = true
-    const noteId = notes.value[index].id
-    const response = await fetch(
-      `${API_URL}/notes/${noteId}`, 
-      createFetchOptions('GET')
-    )
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const serverNote = await response.json()
-    currentNote.value = transformNote(serverNote.data)
-    currentNoteIndex.value = index
-    isEditing.value = true
-  } catch (err) {
-    error.value = 'Error al cargar la nota'
-    console.error(err)
-  } finally {
-    isLoading.value = false
-  }
-}
-
 const toggleDeleteMode = (index) => {
   if (noteToDelete.value === index) {
     noteToDelete.value = null
@@ -383,7 +351,13 @@ const deleteNote = async (index) => {
     const noteId = notes.value[index].id
     const response = await fetch(
       `${API_URL}/notes/${noteId}`,
-      createFetchOptions('DELETE')
+      {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'x-version': '1.0.0'
+        }
+      }
     )
 
     if (!response.ok) {
@@ -393,8 +367,10 @@ const deleteNote = async (index) => {
     notes.value.splice(index, 1)
     noteToDelete.value = null
     
-    // Recargar las notas
     await fetchNotes()
+    
+    // Forzar la recarga después de eliminar
+    window.location.reload()
   } catch (err) {
     error.value = 'Error al eliminar la nota'
     console.error(err)
