@@ -16,26 +16,24 @@ export default defineConfig({
     outDir: join(__dirname, 'client/dist'),
     emptyOutDir: true,
     manifest: true,
-},
-
-//   server: {
-//     // https: {
-//     //   key: privateKey,
-//     //   cert: certificate,
-//     // },
-//     host: 'localhost',
-//     port: 5011,
-//     proxy: {
-//       '/users': {
-//         target: 'https://localhost:5011',
-//         secure: false,
-//         rewrite: (path) => path.replace(/^\/users/, '')
-//       },
-//       '/notes': {
-//         target: 'https://localhost:5011',
-//         secure: false,
-//         rewrite: (path) => path.replace(/^\/notes/, '')
-//       }
-//     }
-//   }
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+        assetFileNames: (assetInfo) => {
+          let extType = assetInfo.name.split('.').at(1);
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            extType = 'img';
+          }
+          return `assets/${extType}/[name]-[hash][extname]`;
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': join(__dirname, 'client/src'),
+    },
+  },
 });
