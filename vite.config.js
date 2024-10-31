@@ -7,7 +7,7 @@ export default defineConfig({
   base: '/NotesApp/',  // Cambiado de https://... a /NotesApp/
   plugins: [vue()],
   build: {
-    outDir: join(__dirname, 'dist'), // Cambiado para generar dist en la raíz
+    outDir: join(__dirname, './client/dist'), // Cambiado para generar dist en la raíz
     emptyOutDir: true,
     rollupOptions: {
       output: {
