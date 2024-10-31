@@ -1,13 +1,13 @@
 const session = require('express-session');
-const fs = require("fs");
-const SECRET_KEY = fs.readFileSync('./certificate.csr');
+// const fs = require("fs");
+// const  = fs.readFileSync('./certificate.csr');
 
 const sessionConfig = session({
-    secret: SECRET_KEY.toString('utf8'),
+    secret: process.env.EXPRESS_SECRET_KEY,
     resave: false,
     saveUninitialized: false, // Cambiado a false para evitar crear sesiones vacías
     cookie: { 
-        secure: true,        // Para HTTPS
+        secure: false,        // Para HTTPS
         httpOnly: true,      // Previene acceso desde JavaScript del cliente
         maxAge: 1800000,     // 30 minutos
         sameSite: 'strict'   // Protección adicional contra CSRF

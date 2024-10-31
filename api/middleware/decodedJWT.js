@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
+// const fs = require('fs');
 
 module.exports = (req, res, next) => {
     try {
-        const SECRET_KEY = fs.readFileSync('./certificate.csr');
-        var payload = jwt.verify(req.session.auth, SECRET_KEY.toString('utf8'));
+        // const SECRET_KEY = fs.readFileSync('./certificate.csr');
+        const payload = jwt.verify(req.session.auth, process.env.EXPRESS_SECRET_KEY);
         req.data = payload;
         next();
     } catch (error) {

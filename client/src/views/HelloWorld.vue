@@ -161,7 +161,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { SearchIcon, ClockIcon, PlusIcon, TrashIcon, ChevronLeftIcon, EyeIcon, CameraIcon, BoldIcon, ItalicIcon, UnderlineIcon, ListIcon, ListOrderedIcon } from 'lucide-vue-next'
 
-const API_URL = 'https://localhost:5011'
+const API_URL = 'http://localhost:5011'
 
 const notes = ref([])
 const noteColors = [

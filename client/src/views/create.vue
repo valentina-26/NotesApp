@@ -120,7 +120,7 @@ const createAccount = async () => {
     isLoading.value = true;
     errorMessage.value = '';
 
-    const response = await fetch('https://localhost:5011/users', {
+    const response = await fetch('http://localhost:5011/users', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
