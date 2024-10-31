@@ -11,6 +11,13 @@ EXPRESS_PORT=5011
 
 MONGO_URI="mongodb+srv://valentina-26:anavale26@cluster0.3vcyrur.mongodb.net/"
 MONGO_DB="NotasApp"
+
+EXPRESS_HOST= localhost
+EXPRESS_PORT=5011
+
+MONGO_URI="mongodb://mongo:EJpIWaMivhJxCKxoMojvkRauAQkwkNnx@autorack.proxy.rlwy.net:47767"
+MONGO_DB="NotasApp"
+
 # API de Notas y Usuarios
 
 ## Base URL
