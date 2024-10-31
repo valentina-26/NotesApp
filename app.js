@@ -5,8 +5,8 @@ const userRouter = require('./api/router/userRouter.js');
 const error = require('./api/middleware/errorHandler.js');
 const session = require('./api/middleware/sessionConfig.js');
 const auth = require('./api/middleware/decodedJWT.js')
-const https = require('https');
-const fs = require('fs');
+// const https = require('https');
+// const fs = require('fs');
 const path = require('path'); 
 const app = express();
 
@@ -37,15 +37,15 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
-// Cargar certificado y clave privada
-const privateKey = fs.readFileSync('./private.key');
-const certificate = fs.readFileSync('./certificate.crt');
+// // Cargar certificado y clave privada
+// const privateKey = fs.readFileSync('./private.key');
+// const certificate = fs.readFileSync('./certificate.crt');
 
 // Crear servidor HTTPS
-const httpsServer = https.createServer({
-    key: privateKey,
-    cert: certificate
-}, app);
+// const httpsServer = https.createServer({
+//     key: privateKey,
+//     cert: certificate
+// }, app);
 
 // Configuración del servidor
 const config = {
@@ -54,6 +54,6 @@ const config = {
 };
 
 // Iniciar el servidor
-httpsServer.listen(config.port, config.host, () => {
-    console.log(`https://${config.host}:${config.port}`);
-});
+app.listen(config, ()=>{
+    console.log(`http://${config.host}:${config.port}`);
+})

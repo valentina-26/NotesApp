@@ -2,7 +2,7 @@ const User = require("../model/userModel");
 const {validationResult} = require("express-validator")
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken")
-const fs = require('fs');
+// const fs = require('fs');
 
 
 /**
@@ -12,45 +12,27 @@ const fs = require('fs');
  * TODO: devuelve un token con jwt
  */
 exports.AddNewUser = async (req, res) => {
+    console.log("dfgvbhjnkm")
     try {
-        // 1. Crear instancia del modelo
         let user = new User();
-
-        // 2. Hashear la contraseña
         req.body.password = await bcrypt.hash(req.body.password, 10);
-
-        // 3. Guardar usuario
         let resultPOST = await user.save(req.body);
-
-        // 4. Si el usuario ya existe, retornar mensaje
         if (resultPOST.status === 200) {
             return res.status(resultPOST.status).json(resultPOST);
         }
-
-        // 5. Preparar datos para el token
         const userData = {
             _id: resultPOST.data.insertedId,
             nickName: req.body.nickName,
             email: req.body.email
         };
-
-        // 6. Leer la clave secreta
-        const SECRET_KEY = fs.readFileSync('./certificate.csr', 'utf8');
-
-        // 7. Generar token
+        const SECRET_KEY = process.env.EXPRESS_SECRET_KEY;
         const token = jwt.sign(userData, SECRET_KEY, { 
-            expiresIn: '30m' // 30 minutos
+            expiresIn: '30m'
         });
-
-        // 8. Inicializar sesión si no existe
         if (!req.session) {
             req.session = {};
         }
-
-        // 9. Guardar token en sesión
         req.session.auth = token;
-
-        // 10. Enviar respuesta
         return res.status(201).json({
             status: 201,
             message: "Usuario creado y sesión iniciada",
@@ -59,8 +41,6 @@ exports.AddNewUser = async (req, res) => {
 
     } catch (error) {
         console.error('Error completo:', error);
-        
-        // Manejar el error de manera más robusta
         let errorResponse;
         try {
             errorResponse = JSON.parse(error.message);
@@ -103,7 +83,8 @@ exports.signInUser = async (req, res) => {
         }
 
         // Crear token
-        const SECRET_KEY = fs.readFileSync('./certificate.csr', 'utf8');
+        // const SECRET_KEY = fs.readFileSync('./certificate.csr', 'utf8');
+        const SECRET_KEY = process.env.EXPRESS_SECRET_KEY
         const token = jwt.sign({
             _id: result.data._id,
             nickName: result.data.nickName,
@@ -176,7 +157,8 @@ exports.signInUser = async (req, res) => {
 exports.logoutUser = async (req, res) => {
     try {
         const token = req.session.auth;
-        const SECRET_KEY = fs.readFileSync('./certificate.csr');
+        
+        const SECRET_KEY = process.env.EXPRESS_SECRET_KEY// const SECRET_KEY = fs.readFileSync('./certificate.csr');
         const decoded = jwt.verify(token, SECRET_KEY.toString('utf8'));
         const { exp, iat, ...payload } = decoded;
         const newToken = jwt.sign(payload, SECRET_KEY.toString('utf8'), { expiresIn: -9999 });

@@ -85,7 +85,7 @@ const handleSubmit = async () => {
   error.value = '';
 
   try {
-    const response = await fetch('https://localhost:5011/users/login', {
+    const response = await fetch('http://localhost:5011/users/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
