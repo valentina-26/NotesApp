@@ -1,24 +1,16 @@
-// vite.config.js
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { join } from 'path';
-import fs from 'fs';
-
-// Cargar certificado y clave privada
-// const privateKey = fs.readFileSync('./private.key');
-// const certificate = fs.readFileSync('./certificate.crt');
 
 export default defineConfig({
   root: join(__dirname, 'client'),
+  base: '/NotesApp/',  // Cambiado de https://... a /NotesApp/
   plugins: [vue()],
   build: {
-    base: 'https://valentina-26.github.io/NotesApp/',
-    outDir: join(__dirname, 'client/dist'),
+    outDir: join(__dirname, 'dist'), // Cambiado para generar dist en la raíz
     emptyOutDir: true,
-    manifest: true,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
         assetFileNames: (assetInfo) => {
           let extType = assetInfo.name.split('.').at(1);
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
