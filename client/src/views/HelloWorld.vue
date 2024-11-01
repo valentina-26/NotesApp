@@ -370,7 +370,7 @@ const deleteNote = async (index) => {
     await fetchNotes()
     
     // Forzar la recarga después de eliminar
-    window.location.reload()
+
   } catch (err) {
     error.value = 'Error al eliminar la nota'
     console.error(err)
